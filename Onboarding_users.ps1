@@ -10,6 +10,20 @@ $description = Read-Host "Enter Description (e.g. job title, department)"
 # Create samAccountName: firstname + first letter of lastname (lowercase)
 $samAccountName = ($firstName + $lastName[0]).ToLower()
 
+# Confirm before continuing
+Write-Host "🛠 Starting onboarding script for: $firstName $lastName"
+$confirmation = Read-Host "Proceed with creating user '$firstName $lastName' with username '$samAccountName'? (Y/N)"
+if ($confirmation -ne 'Y') {
+    Write-Host "❌ Aborted by user."
+    exit
+}
+
+# Check if user already exists
+if (Get-ADUser -Filter "SamAccountName -eq '$samAccountName'" -ErrorAction SilentlyContinue) {
+    Write-Warning "⚠️ User '$samAccountName' already exists. Skipping creation."
+    exit
+}
+
 # Generate a 16-character secure password with complexity
 function Generate-SecurePassword {
     $upper = 65..90 | ForEach-Object { [char]$_ }      # A-Z
@@ -43,8 +57,8 @@ Add-Type -AssemblyName PresentationFramework
 [System.Windows.MessageBox]::Show("Temporary Password (copy now):`n$passwordPlain", "User Password", "OK", "Info")
 
 # Define UPN and OU path — update these for your environment
-$userPrincipalName = "$samAccountName@test.local"
-$userOU =  "CN=Users,DC=test,DC=local"  # Changed to default Users container
+$userPrincipalName = "$samAccountName@Pr0digal.local" #change to your ad
+$userOU =  "CN=Users,DC=Pr0digal,DC=local"  # Changed to default Users container
 
 # Create the AD user
 try {
@@ -66,9 +80,9 @@ try {
 
     # List of groups to add (searched globally instead of a specific OU)
     $groupNames = @(
-        "CyberArk",
-        "Defender",
-        "Domain Users" ,
+        "CyberArk User",
+        "2FA Users",
+        "Domain Users",
         "Remote Desktop Users"
     )
 
